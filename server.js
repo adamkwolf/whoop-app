@@ -19,9 +19,17 @@ app.use(express.static('public'));
 app.use('/auth', authRoutes);
 app.use('/api', dashboardRoutes);
 
-// Default route
+// Explicit routes for static pages
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/privacy.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
+
+app.get('/dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 app.listen(PORT, () => {
