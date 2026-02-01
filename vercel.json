@@ -11,10 +11,5 @@
       "src": "/(.*)",
       "dest": "/server.js"
     }
-  ],
-  "env": {
-    "WHOOP_CLIENT_ID": "@whoop_client_id",
-    "WHOOP_CLIENT_SECRET": "@whoop_client_secret",
-    "WHOOP_REDIRECT_URI": "@whoop_redirect_uri"
-  }
+  ]
 }
