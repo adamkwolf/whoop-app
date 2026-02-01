@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHOOP Dashboard - TARS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🟪 Your WHOOP Dashboard</h1>
+            <p>Real-time insights from your WHOOP device</p>
+        </header>
+
+        <div id="loading" style="text-align: center; margin: 2rem;">
+            <p>Loading your WHOOP data...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <p id="error-message"></p>
+            <p><a href="/auth/whoop">Reconnect WHOOP Account</a></p>
+        </div>
+
+        <main id="dashboard" class="dashboard" style="display: none;">
+            <!-- Profile Section -->
+            <section class="metric-card">
+                <h2>Profile</h2>
+                <div id="profile-data">
+                    <p><strong>Name:</strong> <span id="user-name">-</span></p>
+                    <p><strong>Email:</strong> <span id="user-email">-</span></p>
+                </div>
+            </section>
+
+            <!-- Latest Recovery -->
+            <section class="metric-card">
+                <h2>Latest Recovery</h2>
+                <div id="recovery-data">
+                    <div class="metric-value" id="recovery-score">-</div>
+                    <div class="metric-label">Recovery Score</div>
+                    <div style="margin-top: 1rem;">
+                        <p><strong>HRV:</strong> <span id="hrv">-</span> ms</p>
+                        <p><strong>Resting HR:</strong> <span id="resting-hr">-</span> bpm</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Latest Strain -->
+            <section class="metric-card">
+                <h2>Latest Strain</h2>
+                <div id="strain-data">
+                    <div class="metric-value" id="strain-score">-</div>
+                    <div class="metric-label">Strain Score</div>
+                    <div style="margin-top: 1rem;">
+                        <p><strong>Avg HR:</strong> <span id="avg-hr">-</span> bpm</p>
+                        <p><strong>Max HR:</strong> <span id="max-hr">-</span> bpm</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Body Measurements -->
+            <section class="metric-card">
+                <h2>Body Measurements</h2>
+                <div id="body-data">
+                    <p><strong>Height:</strong> <span id="height">-</span> cm</p>
+                    <p><strong>Weight:</strong> <span id="weight">-</span> kg</p>
+                    <p><strong>Max HR:</strong> <span id="max-heart-rate">-</span> bpm</p>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="metric-card" style="grid-column: 1 / -1;">
+                <h2>Recent Cycles</h2>
+                <div id="cycles-data">
+                    <div id="cycles-list">Loading recent cycles...</div>
+                </div>
+            </section>
+        </main>
+
+        <footer style="text-align: center; margin-top: 3rem;">
+            <button id="disconnect-btn" style="background: #dc2626; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                Disconnect WHOOP Account
+            </button>
+            <p style="margin-top: 1rem;"><a href="/">← Back to Home</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Check authentication and load data
+        async function loadDashboard() {
+            try {
+                // Check if connected
+                const authResponse = await fetch('/api/auth/status');
+                const authData = await authResponse.json();
+                
+                if (!authData.authenticated) {
+                    window.location.href = '/?error=not_authenticated';
+                    return;
+                }
+                
+                // Load dashboard data
+                const dashboardResponse = await fetch('/api/dashboard');
+                
+                if (!dashboardResponse.ok) {
+                    throw new Error('Failed to load dashboard data');
+                }
+                
+                const data = await dashboardResponse.json();
+                displayData(data);
+                
+            } catch (error) {
+                console.error('Dashboard error:', error);
+                showError('Failed to load WHOOP data: ' + error.message);
+            }
+        }
+
+        function displayData(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'grid';
+            
+            // Profile
+            if (data.profile) {
+                document.getElementById('user-name').textContent = `${data.profile.first_name} ${data.profile.last_name}`;
+                document.getElementById('user-email').textContent = data.profile.email;
+            }
+            
+            // Body measurements
+            if (data.bodyMeasurement) {
+                document.getElementById('height').textContent = Math.round(data.bodyMeasurement.height_meter * 100);
+                document.getElementById('weight').textContent = Math.round(data.bodyMeasurement.weight_kilogram);
+                document.getElementById('max-heart-rate').textContent = data.bodyMeasurement.max_heart_rate;
+            }
+            
+            // Latest recovery
+            if (data.recentRecovery && data.recentRecovery.length > 0) {
+                const latestRecovery = data.recentRecovery[0];
+                document.getElementById('recovery-score').textContent = latestRecovery.score?.recovery_score || '-';
+                document.getElementById('hrv').textContent = latestRecovery.score?.hrv_rmssd_milli || '-';
+                document.getElementById('resting-hr').textContent = latestRecovery.score?.resting_heart_rate || '-';
+            }
+            
+            // Latest strain
+            if (data.recentCycles && data.recentCycles.length > 0) {
+                const latestCycle = data.recentCycles[0];
+                document.getElementById('strain-score').textContent = latestCycle.score?.strain?.toFixed(1) || '-';
+                document.getElementById('avg-hr').textContent = latestCycle.score?.average_heart_rate || '-';
+                document.getElementById('max-hr').textContent = latestCycle.score?.max_heart_rate || '-';
+            }
+            
+            // Recent cycles
+            if (data.recentCycles) {
+                const cyclesList = document.getElementById('cycles-list');
+                if (data.recentCycles.length === 0) {
+                    cyclesList.innerHTML = '<p>No recent cycle data available</p>';
+                } else {
+                    cyclesList.innerHTML = data.recentCycles.map(cycle => `
+                        <div style="background: #222; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                            <p><strong>Date:</strong> ${new Date(cycle.start).toLocaleDateString()}</p>
+                            <p><strong>Strain:</strong> ${cycle.score?.strain?.toFixed(1) || 'N/A'}</p>
+                            <p><strong>Avg HR:</strong> ${cycle.score?.average_heart_rate || 'N/A'} bpm</p>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+        }
+
+        // Disconnect button handler
+        document.getElementById('disconnect-btn').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to disconnect your WHOOP account?')) {
+                try {
+                    await fetch('/auth/revoke', { method: 'POST' });
+                    window.location.href = '/?disconnected=true';
+                } catch (error) {
+                    alert('Failed to disconnect: ' + error.message);
+                }
+            }
+        });
+
+        // Load dashboard on page load
+        loadDashboard();
+    </script>
+</body>
+</html>
