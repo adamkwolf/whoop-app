@@ -15,11 +15,12 @@ const WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token';
 // Scopes we need for the dashboard
 const SCOPES = [
     'read:recovery',
-    'read:cycles', 
+    'read:cycles',
     'read:workout',
     'read:sleep',
     'read:profile',
-    'read:body_measurement'
+    'read:body_measurement',
+    'offline'  // Required to get refresh token
 ].join(' ');
 
 // Initiate WHOOP OAuth flow
