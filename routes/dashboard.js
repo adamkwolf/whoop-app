@@ -79,6 +79,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         // Include token info in dashboard response
         dashboardData.token = {
             access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
             expires_at: tokenData.expires_at,
             expires_in_seconds: Math.max(0, Math.floor((tokenData.expires_at - Date.now()) / 1000))
         };
