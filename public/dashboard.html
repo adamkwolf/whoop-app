@@ -115,11 +115,8 @@
                     return;
                 }
                 
-                // Load dashboard data and token in parallel
-                const [dashboardResponse, tokenResponse] = await Promise.all([
-                    fetch('/api/dashboard'),
-                    fetch('/api/token')
-                ]);
+                // Load dashboard data (includes token)
+                const dashboardResponse = await fetch('/api/dashboard');
 
                 if (!dashboardResponse.ok) {
                     throw new Error('Failed to load dashboard data');
@@ -128,10 +125,9 @@
                 const data = await dashboardResponse.json();
                 displayData(data);
 
-                // Display token
-                if (tokenResponse.ok) {
-                    const tokenData = await tokenResponse.json();
-                    displayToken(tokenData);
+                // Display token from dashboard response
+                if (data.token) {
+                    displayToken(data.token);
                 }
                 
             } catch (error) {

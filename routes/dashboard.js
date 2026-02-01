@@ -72,7 +72,17 @@ router.get('/workouts', requireAuth, async (req, res) => {
 // Get dashboard summary data
 router.get('/dashboard', requireAuth, async (req, res) => {
     try {
+        const userId = 'default';
+        const tokenData = whoopClient.getToken(userId);
         const dashboardData = await whoopClient.getDashboardData();
+
+        // Include token info in dashboard response
+        dashboardData.token = {
+            access_token: tokenData.access_token,
+            expires_at: tokenData.expires_at,
+            expires_in_seconds: Math.max(0, Math.floor((tokenData.expires_at - Date.now()) / 1000))
+        };
+
         res.json(dashboardData);
     } catch (error) {
         console.error('Dashboard API error:', error);
