@@ -1,0 +1,14 @@
+# WHOOP API Spec (Saved 2026-02-01)
+# Source: https://api.prod.whoop.com/developer/doc/openapi.json
+
+Key endpoints for reference:
+- Base URL: https://api.prod.whoop.com/developer
+- Profile: /v2/user/profile/basic
+- Body Measurements: /v2/user/measurement/body
+- Recovery: /v2/recovery
+- Cycles: /v2/cycle
+- Sleep: /v2/activity/sleep
+- Workouts: /v2/activity/workout
+
+All endpoints require Authorization: Bearer <access_token>
+Response format: JSON with records array for collections
