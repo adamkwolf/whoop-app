@@ -84,12 +84,24 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 router.get('/auth/status', (req, res) => {
     const userId = 'default';
     const tokenData = whoopClient.getToken(userId);
-    
+
     if (!tokenData || Date.now() > tokenData.expires_at) {
         return res.json({ authenticated: false });
     }
-    
+
     res.json({ authenticated: true });
+});
+
+// Get access token for external use
+router.get('/token', requireAuth, (req, res) => {
+    const userId = 'default';
+    const tokenData = whoopClient.getToken(userId);
+
+    res.json({
+        access_token: tokenData.access_token,
+        expires_at: tokenData.expires_at,
+        expires_in_seconds: Math.max(0, Math.floor((tokenData.expires_at - Date.now()) / 1000))
+    });
 });
 
 module.exports = router;

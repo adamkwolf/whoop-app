@@ -23,6 +23,23 @@
         </div>
 
         <main id="dashboard" class="dashboard" style="display: none;">
+            <!-- Access Token Section -->
+            <section class="metric-card" style="grid-column: 1 / -1; background: #1a1a2e;">
+                <h2>🔑 Access Token</h2>
+                <div id="token-data">
+                    <p style="margin-bottom: 0.5rem;"><strong>Expires in:</strong> <span id="token-expires">-</span></p>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
+                        <input type="text" id="access-token" readonly
+                            style="flex: 1; padding: 0.75rem; background: #111; border: 1px solid #333; border-radius: 4px; color: #0f0; font-family: monospace; font-size: 0.85rem;">
+                        <button id="copy-token-btn"
+                            style="padding: 0.75rem 1rem; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Copy
+                        </button>
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #888;">Use this token with the WHOOP skill or API calls.</p>
+                </div>
+            </section>
+
             <!-- Profile Section -->
             <section class="metric-card">
                 <h2>Profile</h2>
@@ -98,15 +115,24 @@
                     return;
                 }
                 
-                // Load dashboard data
-                const dashboardResponse = await fetch('/api/dashboard');
-                
+                // Load dashboard data and token in parallel
+                const [dashboardResponse, tokenResponse] = await Promise.all([
+                    fetch('/api/dashboard'),
+                    fetch('/api/token')
+                ]);
+
                 if (!dashboardResponse.ok) {
                     throw new Error('Failed to load dashboard data');
                 }
-                
+
                 const data = await dashboardResponse.json();
                 displayData(data);
+
+                // Display token
+                if (tokenResponse.ok) {
+                    const tokenData = await tokenResponse.json();
+                    displayToken(tokenData);
+                }
                 
             } catch (error) {
                 console.error('Dashboard error:', error);
@@ -164,11 +190,33 @@
             }
         }
 
+        function displayToken(tokenData) {
+            document.getElementById('access-token').value = tokenData.access_token;
+            const minutes = Math.floor(tokenData.expires_in_seconds / 60);
+            const seconds = tokenData.expires_in_seconds % 60;
+            document.getElementById('token-expires').textContent = `${minutes}m ${seconds}s`;
+        }
+
         function showError(message) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'block';
             document.getElementById('error-message').textContent = message;
         }
+
+        // Copy token button handler
+        document.getElementById('copy-token-btn').addEventListener('click', () => {
+            const tokenInput = document.getElementById('access-token');
+            tokenInput.select();
+            navigator.clipboard.writeText(tokenInput.value).then(() => {
+                const btn = document.getElementById('copy-token-btn');
+                btn.textContent = 'Copied!';
+                btn.style.background = '#22c55e';
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.style.background = '#6366f1';
+                }, 2000);
+            });
+        });
 
         // Disconnect button handler
         document.getElementById('disconnect-btn').addEventListener('click', async () => {
